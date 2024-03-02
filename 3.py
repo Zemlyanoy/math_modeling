@@ -42,25 +42,25 @@ def move_func(s, t):
 G = 6.67 * 10**(-11)
 M = 1.98 * 10**(30)
 
-x10 = 149 * 10**9
-v_x10 = 0
-y10 = 0
+x10 = 149 * 10 **9 # Меркурий
+v_x10 = 1
+y10 = 1
 v_y10 = 30000
 
-x20 = 0
-v_x20 = -47360
-y20 = 0.387 * 149 * 10**9
-v_y20 = 0
+x20 = 149 * 10**9 # Земля
+v_x20 = 0
+y20 = 0
+v_y20 = 30000
 
-x30 = 0
-v_x30 = 149 * 10**9
-y30 = -30000
-v_y30 = 0
+x30 = 149 * 10 **9 # Венера
+v_x30 = 0
+y30 = 0
+v_y30 = 30000
 
-x40 = 0
-v_x40 = 0.387 * 149 * 10**9
+x40 = 149 * 10 **9 # Марс
+v_x40 = 0
 y40 = 0
-v_y40 = 0
+v_y40 = 30000
 
 
 s0 = (x10, v_x10, y10, v_y10,
@@ -97,8 +97,8 @@ fig, ax = plt.subplots()
 ball1, = plt.plot([], [], 'o', color='b')
 ball_line1, = plt.plot([], [], '-', color='b')
 
-ball2, = plt.plot([], [], 'o', color='y')
-ball_line2, = plt.plot([], [], '-', color='y')
+ball2, = plt.plot([], [], 'o', color='c')
+ball_line2, = plt.plot([], [], '-', color='c')
 
 ball3, = plt.plot([], [], 'o', color='g')
 ball_line3, = plt.plot([], [], '-', color='g')

@@ -1,41 +1,111 @@
-from matplotlib.animation import FuncAnimation
-import matplotlib.pyplot as plt
 import numpy as np
+from numpy import absolute as nabs
+from scipy.integrate import odeint
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-import tkinter as tk
-import time
-from random import randint, choice
- 
-window = tk.Tk()
-window.geometry("500x250")
-window.resizable(False, False)
-window.title("Billiards Simulation")
- 
-canvas = tk.Canvas(window, width=500, height=250, bg="springgreen", highlightthickness=0)
-canvas.pack()
- 
-ball_x = randint(50, 450)
-ball_y = randint(50, 200)
- 
-ball = canvas.create_oval(ball_x, ball_y, 20 + ball_x, 20 + ball_y, fill="yellow")
-step_x = choice([-1., 1.])
-step_y = choice([-1., 1.])
- 
-while True:
-    window.update()
-    canvas.move(ball, step_x, step_y)
-    ball_coords = canvas.coords(ball)
-    if ball_coords[0] <= 0 or ball_coords[2] >= 500:
-        step_x *= -1
-    if ball_coords[1] <= 0 or ball_coords[3] >= 250:
-        step_y*= -1
-    step_x *= 0.999
-    step_y *= 0.999
-    sqr_mag = step_x**2+step_y**2
-    canvas.create_oval(ball_coords[0]+10,ball_coords[1]+10,ball_coords[0]+10,ball_coords[1]+10)
-    canvas.tag_raise(ball)
-    if sqr_mag < 0.0001:
-        break
-    time.sleep(0.001)
-    
-window.mainloop()
+
+def collision(x1, vx1, x2, vx2, radius, mass1, mass2):
+    """Аргументы функции:
+    x1, vx1 - координата и скорость 1-ой частицы
+    x2, vx2 - координата и скорость 2-ой частицы
+    radius, mass1, mass2 - радиус частиц и их массы
+    """
+
+    # Расчет расстояния между центрами частиц
+    r12 = np.sqrt((x1 - x2) ** 2)
+
+    # Проверка условия на столкновение: расстояние
+    # должно быть меньше 2-х радиусов
+    if r12 <= 2 * radius:
+        # Пересчет  скорости первой частицы
+        VX1 = vx1 * (mass1 - mass2) / (mass1 + mass2) \
+              + 2 * mass2 * vx2 / (mass1 + mass2)
+
+        # Пересчет скорости второй частицы
+        VX2 = vx2 * (mass2 - mass1) / (mass1 + mass2) \
+              + 2 * mass1 * vx1 / (mass1 + mass2)
+
+    else:
+        # Eсли условие столкновнеия не выполнено,
+        # то скорости частиц не пересчитываются
+        VX1, VX2 = vx1, vx2
+
+    return VX1, VX2
+
+
+def move_func(s, t):
+    x1, v_x1, x2, v_x2 = s
+
+    dx1dt = v_x1
+    dv_x1dt = 0
+
+    dx2dt = v_x2
+    dv_x2dt = 0
+
+    return dx1dt, dv_x1dt, dx2dt, dv_x2dt
+
+
+def calc(mass1, mass2, radius, x10, x20, v10, v20, T, N):
+    # Массивы для записи итоговых координат объектов
+    x1 = [x10]
+    x2 = [x20]
+
+    tau = np.linspace(0, T, N)
+
+    # Цикл для расчета столкновений
+    for k in range(N - 1):
+        t = [tau[k], tau[k + 1]]
+        s0 = x10, v10, x20, v20
+
+        sol = odeint(move_func, s0, t)
+
+        x10 = sol[1, 0]
+        x20 = sol[1, 2]
+        x1.append(x10)
+        x2.append(x20)
+
+        v10 = sol[1, 1]
+        v20 = sol[1, 3]
+        res = collision(x10, v10, x20, v20, radius, mass1, mass2)
+        v10 = res[0]
+        v20 = res[1]
+
+    return x1, x2
+
+
+def animate(i):
+    ball_1.set_data((x1[i], 0))
+    ball_2.set_data((x2[i], 0))
+
+
+if __name__ == '__main__':
+
+    # Парамаетры и условия тестового примера
+    mass1 = 3.5
+    mass2 = 1
+    radius = 0.5
+
+    x10 = 0
+    x20 = 4
+    v10 = 1
+    v20 = 0
+
+    # Разбиение общего времени моделирования на интервалы
+    T = 10
+    N = 500
+
+    x1, x2 = calc(mass1, mass2, radius, x10, x20, v10, v20, T, N)
+
+    fig, ax = plt.subplots()
+
+    ball_1, = plt.plot([], [], 'o', color='r', ms=25)
+    ball_2, = plt.plot([], [], 'o', color='g', ms=25)
+    ax.set_xlim(-5, 10)
+    ax.set_ylim(-1, 1)
+
+    ani = FuncAnimation(fig, animate, frames=N, interval=30)
+    plt.plot([-0.5, 8], [0.5, 0.5])
+    plt.plot([-0.5, 8], [-0.5, -0.5])
+    plt.grid()
+    ani.save('collision.gif')
